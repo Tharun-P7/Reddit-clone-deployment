@@ -1,3 +1,6 @@
+# **Reddit Clone Application Deployment**
+
+
 In this Project, we are going to deploy reddit app in aws ec2 using terraform as a infrastructure building tool and then we automate the whole process using the jenkins which allows us continuous integration and continuous deployment (CI/CD) and then we setup Promotheus and grafana for monitoring
 
 ![1_P6zh9XDYT8P06J94A4PDag](https://github.com/user-attachments/assets/e8421d13-fc1a-4a26-8dec-766c25d62543)
@@ -21,7 +24,7 @@ open your terminal and make a separate folder for reddit app →mkdir Reddit
 cd Reddit
 clone the github repo
 git clone https://github.com/Tharun-P7/Reddit-clone-deployment.git
-Step 1 → Setup Terraform and configure aws on your local machine
+## **Step 1 → Setup Terraform and configure aws on your local machine**
 1. Setup Terraform
 To install terraform copy and paste the below commands
 
@@ -48,7 +51,7 @@ I have already an amazon user if you want you create a new user checkout the bel
 
 6. Attach the policies directly to your iam user → click next
 
-Note →I will provide the administrator accesss for now but we careful while attaching the policies on your workapce
+Note → I will provide the administrator accesss for now but we careful while attaching the policies on your workapce
 
 
 
@@ -79,12 +82,12 @@ review and create user
 
 15. Now you are ready to configure aws from your terminal
 
-Step 2 → Building a simple Infrastructure from code using terraform
+## **Step 2 → Building a simple Infrastructure from code using terraform**
 go to folder → cd EC2-terraform
 there are three files present main.tf, EC2.sh , provider.tf
 open the file →vim Main.tf
 
-4. change this section → ami = # your ami id , key_name= #your key pair if any
+   change this section → ami = # your ami id , key_name= #your key pair if any
 ![image -2](https://github.com/user-attachments/assets/c29401dd-e200-4c92-ac20-9df0563773d0)
 
 Now run terraform commands →
@@ -117,7 +120,7 @@ ports that are listed in main.tf to be opened
 Here we see Reddit app instance is created by terraform with the given configuration
 
 
-Step 3 → Setup Sonarqube and jenkins
+## Step 3 → Setup Sonarqube and jenkins
 1.Sonarqube →
 copy the public ip of your machine
 
@@ -145,7 +148,7 @@ output is your password and paste it to your jenkins
 
 **Welcome to jenkins dashboard**
 
-**Step 4 → CI/CD pipeline**
+## **Step 4 → CI/CD pipeline**
 - Install Plugins listed below
 1 Eclipse Temurin Installer (Install without restart)
 2 SonarQube Scanner (Install without restart)
@@ -263,7 +266,7 @@ Here’s is our Reddit app
 ![19](https://github.com/user-attachments/assets/bab689cb-57e5-485d-aea6-5acebc9362d9)
 
 
-**Step:5 → Monitoring via Prmotheus and grafana**
+## **Step:5 → Monitoring via Prometheus**
 Prometheus is like a detective that constantly watches your software and gathers data about how it’s performing. It’s good at collecting metrics, like how fast your software is running or how many users are visiting your website.
 
 1. Setup another server or EC2 for monitorning
