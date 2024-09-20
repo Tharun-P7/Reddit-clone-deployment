@@ -1,4 +1,7 @@
-Today we are going to deploy reddit app in aws ec2 using terraform as a infrastructure building tool and then we automate the whole process using the jenkins which allows us continuous integration and continuous deployment (CI/CD) and then we setup Promotheus and grafana for monitering
+In this Project, we are going to deploy reddit app in aws ec2 using terraform as a infrastructure building tool and then we automate the whole process using the jenkins which allows us continuous integration and continuous deployment (CI/CD) and then we setup Promotheus and grafana for monitoring
+
+![1_P6zh9XDYT8P06J94A4PDag](https://github.com/user-attachments/assets/e8421d13-fc1a-4a26-8dec-766c25d62543)
+
 
 Completion steps →
 Step 1 → Setup Terraform and configure aws on your local machine
@@ -9,7 +12,7 @@ Step 3 → Setup Sonarqube and jenkins
 
 Step 4 → CI/CD pipeline
 
-Step5 →Monitering via Prmotheus and grafana
+Step5 → Monitoring via Prometheus and grafana
 
 Step 6 → Terraform Destroy
 
@@ -31,6 +34,7 @@ create an IAM user
 go to your aws account and type IAM
 
 click on IAM
+![IAM](https://github.com/user-attachments/assets/f1063b37-21d2-47e1-9017-25ff14204428)
 
 3. click on user →create user
 
@@ -81,6 +85,7 @@ there are three files present main.tf, EC2.sh , provider.tf
 open the file →vim Main.tf
 
 4. change this section → ami = # your ami id , key_name= #your key pair if any
+![image -2](https://github.com/user-attachments/assets/c29401dd-e200-4c92-ac20-9df0563773d0)
 
 Now run terraform commands →
 main.tf includes userdata which links EC2.sh file on which execution install jenkins,docker,trivy,and start the sonarqube container on port 9000
@@ -88,49 +93,17 @@ resource "aws_security_group" "Jenkins-sg" {
   name        = "Jenkins-Security Group"
   description = "Open 22,443,80,8080,9000"
 # Define a single ingress rule to allow traffic on all specified ports
-  ingress = [
-    for port in [22, 80, 443, 8080, 9000, 3000] : {
-      description      = "TLS from VPC"
-      from_port        = port
-      to_port          = port
-      protocol         = "tcp"
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = []
-      prefix_list_ids  = []
-      security_groups  = []
-      self             = false
-    }
-  ]
-egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-tags = {
-    Name = "Jenkins-sg"
-  }
-}
-resource "aws_instance" "web" {
-  ami                    = "ami-0c7217cdde317cfec"#change the ami id
-  instance_type          = "t2.large"
-  key_name               = "my key"
-  vpc_security_group_ids = [aws_security_group.Jenkins-sg.id]
-  user_data              = templatefile("./install_jenkins.sh", {})
-tags = {
-    Name = "Reddit clone"
-  }
-  root_block_device {
-    volume_size = 30
-  }
-}
+
 terraform init
 terraform validate
 terraform plan
 terraform apply --auto-approve
 
+![3](https://github.com/user-attachments/assets/85f65851-aba1-4055-9f46-9c56b360b56f)
 
 terraform init,validate and plan output
+
+![5](https://github.com/user-attachments/assets/a24ae193-3ac3-4a35-a4b7-ce5ed6819824)
 
 
 terraform apply
@@ -142,3 +115,298 @@ Go to your aws console and checkout the ec2 instances
 ports that are listed in main.tf to be opened
 
 Here we see Reddit app instance is created by terraform with the given configuration
+
+
+Step 3 → Setup Sonarqube and jenkins
+1.Sonarqube →
+copy the public ip of your machine
+
+go to your browser and type →<publicip>:9000
+
+sonarqube window open
+![6](https://github.com/user-attachments/assets/857d6b42-6ef7-4034-817a-5b8062f634a4)
+
+2. initially username and password is admin
+3. update your password
+4. welcome window of Sonarqube
+
+2. Jenkins →
+on browser type →<public_ip>:8080
+2. for this go to your ec2 and connect it
+3. run the below commands
+    sudo su
+    cat /var/lib/jenkins/secrets/initialAdminPassword
+
+output is your password and paste it to your jenkins
+4. Install the suggested plugins
+![7](https://github.com/user-attachments/assets/7d43cec8-427e-45f0-a95b-63d1d158f548)
+
+5. Setup your jenkins user
+
+**Welcome to jenkins dashboard**
+
+**Step 4 → CI/CD pipeline**
+- Install Plugins listed below
+1 Eclipse Temurin Installer (Install without restart)
+2 SonarQube Scanner (Install without restart)
+3 NodeJs Plugin (Install Without restart)
+4. owasp →The OWASP Plugin in Jenkins is like a “security assistant” that helps you find and fix security issues in your software. It uses the knowledge and guidelines from the Open Web Application Security Project (OWASP) to scan your web applications and provide suggestions on how to make them more secure. It’s a tool to ensure that your web applications are protected against common security threats and vulnerabilities.
+
+5. Prometheus metrics →to monitor jenkins on grafana dashboard
+6. Download all the docker related plugins
+
+![8](https://github.com/user-attachments/assets/48cf9b84-a471-4503-b58c-d923002ec706)
+
+
+Add credentials of Sonarqube and Docker
+First we genrate a token for sonarqube to use in jenkins credentials as secret text
+
+a. setup sonarqube credentials
+go to http://publicip:9000
+now enter your username and password
+click on security →users →token →generate token
+token_name==jenkins
+
+
+4. copy the token and go to your jenkins →manage jenkins →credentials →global →add credentials
+
+5. select secret text from dropdown
+6. secret text is your token , id = jenkins → click on create
+
+
+b. setup projects in sonarqube for jenkins
+go to your sonarqube server
+click on projects
+in the name field type Reddit
+click on setup
+click on above option
+click on generate
+click on continue
+Sonarqube project for jenkins is setup now
+
+c. Setup docker credentials
+go to your jenkins → manage jenkins → credentials → global → add credentials
+provide your username and password of your dockerhub
+id=docker
+
+![11](https://github.com/user-attachments/assets/ee8dbb65-efe3-4478-9755-0c0ed8160ca6)
+
+credentials for both are setup
+
+3. Now we are going to setup tools for jenkins
+go to manage jenkins → tools
+
+![12](https://github.com/user-attachments/assets/04b99d67-7e2c-4f4a-9d8e-d9230beeec28)
+
+a. add jdk
+click on add jdk and select installer adoptium.net
+choose jdk 17.0.8.1+1version and in name section enter jdk 17
+
+![13](https://github.com/user-attachments/assets/009c5457-c723-4311-9d8f-2a656bfe1b15)
+
+b. add node js
+click on add nodejs
+enter node16 in name section
+choose version nodejs 16.2.0
+
+c. add docker →
+click on add docker
+name==docker
+add installer ==download from docker.com
+
+d. add sonarqube →
+add sonar scanner
+name = sonar-scanner
+
+![16](https://github.com/user-attachments/assets/dcf27324-3a1d-4200-a446-566f07a31130)
+e. add owasp dependency check →
+Adding the Dependency-Check plugin in the “Tools” section of Jenkins allows you to perform automated security checks on the dependencies used by your application
+
+Add dependency check
+name = DP-Check
+from add installer select install from github.com
+
+**Step 4 → Configure global setting for sonarqube**
+go to manage jenkins →Configure global setting →add sonarqube servers
+name = sonar-server
+server_url = http://public_ip:9000
+server authentication token = jenkins → it is created in sonarqube security configurations
+
+4. let’s run the Pipeline →
+go to new item →select pipeline →in the name section type Reddit-pipeline
+
+![17](https://github.com/user-attachments/assets/20bf67ad-9391-42ff-9b2d-735d99d2a3df)
+
+scroll down to the pipeline script and copy paste the following code
+3. click apply and save
+
+
+4. click on build now → it will take about 10–15 min
+
+![18](https://github.com/user-attachments/assets/12cb1474-b9c2-48af-9259-7cd8ad97485e)
+
+
+5. you could checkout the console output
+![20](https://github.com/user-attachments/assets/0c361b72-1746-42e3-8b9e-09b2fc0d3205)
+
+wait for completion
+
+6. owasp dependency check result
+   
+![18](https://github.com/user-attachments/assets/7563bb2c-11bb-4c0f-9402-f15bd75320b3)
+
+7. Now our docker image is build,push and deployed into a container and our app is live and running on port no. 3000
+
+to check →http://<your-public-ip>:3000
+
+Here’s is our Reddit app
+![19](https://github.com/user-attachments/assets/bab689cb-57e5-485d-aea6-5acebc9362d9)
+
+
+**Step:5 → Monitoring via Prmotheus and grafana**
+Prometheus is like a detective that constantly watches your software and gathers data about how it’s performing. It’s good at collecting metrics, like how fast your software is running or how many users are visiting your website.
+
+1. Setup another server or EC2 for monitorning
+go to ec2 console and launch an instance having a base image ofu buntu and with t2.medium specs because Minimum Requirements to Install Prometheus :
+2 CPU cores.
+4 GB of memory.
+20 GB of free disk space.
+2. Installing Prometheus
+First, create a dedicated Linux user for Prometheus and download Prometheus:
+sudo useradd — system — no-create-home — shell /bin/false prometheus
+wget https://github.com/prometheus/prometheus/releases/download/v2.47.1/prometheus-2.47.1.linux-amd64.tar.gz
+2. Extract Prometheus files, move them, and create directories:
+      tar -xvf prometheus-2.47.1.linux-amd64.tar.gz
+      cd prometheus-2.47.1.linux-amd64/
+      sudo mkdir -p /data /etc/prometheus
+      sudo mv prometheus promtool /usr/local/bin/
+      sudo mv consoles/ console_libraries/ /etc/prometheus/
+      sudo mv prometheus.yml /etc/prometheus/prometheus.yml
+   
+4. Set ownership for directories:
+      useradd prometheus
+      sudo chown -R prometheus:prometheus /etc/prometheus/ /data/
+4. Create a systemd unit configuration file for Prometheus:
+      sudo nano /etc/systemd/system/prometheus.service
+   
+Add the following code to the prometheus.service file:
+
+  [Unit]
+  Description=Prometheus
+  Wants=network-online.target
+  After=network-online.target
+  StartLimitIntervalSec=500
+  StartLimitBurst=5[Service]
+  User=prometheus
+  Group=prometheus
+  Type=simple
+  Restart=on-failure
+  RestartSec=5s
+  ExecStart=/usr/local/bin/prometheus \
+    --config.file=/etc/prometheus/prometheus.yml \
+    --storage.tsdb.path=/data \
+    --web.console.templates=/etc/prometheus/consoles \
+    --web.console.libraries=/etc/prometheus/console_libraries \
+    --web.listen-address=0.0.0.0:9090 \
+    --web.enable-lifecycle[Install]
+  WantedBy=multi-user.target
+b. press →ctrl+o #for save and then ctrl+x #for exit from the file
+
+Here’s a explanation of the key parts in this above file:
+![22](https://github.com/user-attachments/assets/c0e47931-76dd-4e50-9fae-0db2aad18983)
+
+User and Group specify the Linux user and group under which Prometheus will run.
+ExecStart is where you specify the Prometheus binary path, the location of the configuration file (prometheus.yml), the storage directory, and other settings.
+web.listen-address configures Prometheus to listen on all network interfaces on port 9090.
+web.enable-lifecycle allows for management of Prometheus through API calls.
+5. Enable and start Prometheus:
+
+sudo systemctl enable prometheus
+sudo systemctl start prometheus
+sudo systemctl status prometheus
+
+Now go to your security group of your ec2 to enable port 9090 in which prometheus will run
+
+go to → http://public_ip:9090 to see the webpage of prometheus
+![21](https://github.com/user-attachments/assets/e48a92b0-79c4-4f6c-b599-30aa0f2c5e6d)
+
+3. Installing Node Exporter:
+Node exporter is like a “reporter” tool for Prometheus, which helps collect and provide information about a computer (node) so Prometheus can monitor it. It gathers data about things like CPU usage, memory, disk space, and network activity on that computer.
+
+A Node Port Exporter is a specific kind of Node Exporter that is used to collect information about network ports on a computer. It tells Prometheus which network ports are open and what kind of data is going in and out of those ports. This information is useful for monitoring network-related activities and can help you ensure that your applications and services are running smoothly and securely.
+
+Run the following commands for installation
+
+Create a system user for Node Exporter and download Node Exporter:
+sudo useradd — system — no-create-home — shell /bin/false node_exporter
+wget https://github.com/prometheus/node_exporter/releases/download/v1.6.1/node_exporter-1.6.1.linux-amd64.tar.gz
+2. Extract Node Exporter files, move the binary, and clean up:
+
+tar -xvf node_exporter-1.6.1.linux-amd64.tar.gz
+sudo mv node_exporter-1.6.1.linux-amd64/node_exporter /usr/local/bin/
+rm -rf node_exporter*
+3. Create a systemd unit configuration file for Node Exporter:
+
+sudo nano /etc/systemd/system/node_exporter.service
+add the following code to the node_exporter.service file:
+
+provide more detailed information about what might be going wrong. For example:
+
+  [Unit]
+  Description=Node Exporter
+  After=network.target
+  [Service]
+  User=node_exporter
+  Group=node_exporter
+  Type=simple
+  ExecStart=/usr/local/bin/node_exporter
+  [Install]
+  WantedBy=default.target
+4. Enable and start Node Exporter:
+  
+  sudo useradd -m -s /bin/bash node_exporter
+  sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter
+  sudo systemctl daemon-reload
+  sudo systemctl start node_exporter
+  sudo systemctl enable node_exporter
+  sudo systemctl status node_exporter
+  node exporter service is now running
+
+You can access Node Exporter metrics in Prometheus.
+
+
+publicip:9100
+
+![23](https://github.com/user-attachments/assets/e5bf6f6f-446a-47e9-9259-32c11f4f79cb)
+
+
+**5. Configure Prometheus Plugin Integration:**
+1. go to your EC2 and run →
+    cd /etc/prometheus
+2. you have to edit the prometheus.yml file to monitor anything
+
+    scrape_configs:
+      - job_name: 'node_exporter'
+        static_configs:
+          - targets: ['localhost:9100']
+      - job_name: 'jenkins'
+        metrics_path: '/prometheus'
+        static_configs:
+          - targets: ['<your-jenkins-ip>:<your-jenkins-port>']
+
+press esc+:wq to save and exit
+
+a. Check the validity of the configuration file →
+
+promtool check config /etc/prometheus/prometheus.yml
+o/p →success
+
+b. Reload the Prometheus configuration without restarting →
+
+curl -X POST http://localhost:9090/-/reload
+
+go to your prometheus tab again and click on status and select targets you will there is three targets present as we enter in yaml file for monitorning
+
+Prometheus status Dashboard
+
+![25](https://github.com/user-attachments/assets/da90a29b-b5ff-4a79-b2a5-53ffba8d6153)
